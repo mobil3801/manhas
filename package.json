@@ -1,22 +1,10 @@
 {
   "name": "manhas",
   "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
+  "description": "Luxe Fashion web application",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx serve ."
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mobil3801/manhas.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/mobil3801/manhas/issues"
-  },
-  "homepage": "https://github.com/mobil3801/manhas#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.52.1"
   }
