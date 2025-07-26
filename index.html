@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxe Fashion - Women's Clothing Store</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h1>Luxe Fashion</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#shop" class="nav-link">Shop</a></li>
+                <li><a href="#new-arrivals" class="nav-link">New Arrivals</a></li>
+                <li><a href="#sale" class="nav-link">Sale</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <div class="nav-icons">
+                <button class="icon-btn" id="searchBtn"><i class="fas fa-search"></i></button>
+                <button class="icon-btn" id="userBtn"><i class="fas fa-user"></i></button>
+                <button class="icon-btn" id="cartBtn">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count">0</span>
+                </button>
+                <button class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h2>Summer Collection 2024</h2>
+            <p>Discover the latest trends in women's fashion</p>
+            <button class="cta-button" onclick="scrollToShop()">Shop Now</button>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800" alt="Fashion Model">
+        </div>
+    </section>
+
+    <!-- Shop Section -->
+    <section id="shop" class="shop-section">
+        <div class="container">
+            <h2 class="section-title">Shop Collection</h2>
+            
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Category:</label>
+                    <select id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        <option value="dresses">Dresses</option>
+                        <option value="tops">Tops</option>
+                        <option value="bottoms">Bottoms</option>
+                        <option value="outerwear">Outerwear</option>
+                        <option value="accessories">Accessories</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Price:</label>
+                    <select id="priceFilter">
+                        <option value="all">All Prices</option>
+                        <option value="0-50">Under $50</option>
+                        <option value="50-100">$50 - $100</option>
+                        <option value="100-200">$100 - $200</option>
+                        <option value="200+">$200+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Size:</label>
+                    <select id="sizeFilter">
+                        <option value="all">All Sizes</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid" id="productsGrid">
+                <!-- Products will be dynamically loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Shopping Cart Modal -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Shopping Cart</h3>
+                <span class="close" id="closeCart">&times;</span>
+            </div>
+            <div class="cart-items" id="cartItems">
+                <!-- Cart items will be displayed here -->
+            </div>
+            <div class="cart-total">
+                <h4>Total: $<span id="cartTotal">0.00</span></h4>
+                <button class="checkout-btn" onclick="checkout()">Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Account Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="userModalTitle">Login</h3>
+                <span class="close" id="closeUser">&times;</span>
+            </div>
+            <div class="user-forms">
+                <!-- Login Form -->
+                <form id="loginForm" class="user-form">
+                    <input type="email" placeholder="Email" required>
+                    <input type="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                    <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+                </form>
+
+                <!-- Register Form -->
+                <form id="registerForm" class="user-form" style="display: none;">
+                    <input type="text" placeholder="Full Name" required>
+                    <input type="email" placeholder="Email" required>
+                    <input type="password" placeholder="Password" required>
+                    <input type="password" placeholder="Confirm Password" required>
+                    <button type="submit">Register</button>
+                    <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+                </form>
+
+                <!-- User Dashboard -->
+                <div id="userDashboard" style="display: none;">
+                    <h4>Welcome, <span id="userName"></span>!</h4>
+                    <div class="dashboard-options">
+                        <button onclick="showOrders()">My Orders</button>
+                        <button onclick="showProfile()">Profile</button>
+                        <button onclick="showAdmin()" id="adminBtn" style="display: none;">Admin Panel</button>
+                        <button onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content admin-content">
+            <div class="modal-header">
+                <h3>Admin Panel</h3>
+                <span class="close" id="closeAdmin">&times;</span>
+            </div>
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="showAdminTab('products')">Products</button>
+                <button class="tab-btn" onclick="showAdminTab('orders')">Orders</button>
+                <button class="tab-btn" onclick="showAdminTab('users')">Users</button>
+            </div>
+            <div class="admin-content-area">
+                <!-- Products Management -->
+                <div id="adminProducts" class="admin-tab active">
+                    <div class="admin-actions">
+                        <button class="add-btn" onclick="showAddProduct()">Add New Product</button>
+                    </div>
+                    <div class="admin-products-list" id="adminProductsList">
+                        <!-- Admin products list will be displayed here -->
+                    </div>
+                </div>
+
+                <!-- Orders Management -->
+                <div id="adminOrders" class="admin-tab">
+                    <div class="admin-orders-list" id="adminOrdersList">
+                        <!-- Admin orders list will be displayed here -->
+                    </div>
+                </div>
+
+                <!-- Users Management -->
+                <div id="adminUsers" class="admin-tab">
+                    <div class="admin-users-list" id="adminUsersList">
+                        <!-- Admin users list will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Product</h3>
+                <span class="close" id="closeAddProduct">&times;</span>
+            </div>
+            <form id="addProductForm" class="product-form">
+                <input type="text" placeholder="Product Name" required>
+                <input type="number" placeholder="Price" step="0.01" required>
+                <select required>
+                    <option value="">Select Category</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="accessories">Accessories</option>
+                </select>
+                <input type="url" placeholder="Image URL" required>
+                <textarea placeholder="Product Description" required></textarea>
+                <div class="size-options">
+                    <label>Available Sizes:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" value="XS"> XS</label>
+                        <label><input type="checkbox" value="S"> S</label>
+                        <label><input type="checkbox" value="M"> M</label>
+                        <label><input type="checkbox" value="L"> L</label>
+                        <label><input type="checkbox" value="XL"> XL</label>
+                    </div>
+                </div>
+                <button type="submit">Add Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Luxe Fashion</h4>
+                    <p>Your premier destination for women's fashion</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#shop">Shop</a></li>
+                        <li><a href="#new-arrivals">New Arrivals</a></li>
+                        <li><a href="#sale">Sale</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Shipping Info</a></li>
+                        <li><a href="#">Returns</a></li>
+                        <li><a href="#">Size Guide</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Luxe Fashion. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
