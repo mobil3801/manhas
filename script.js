@@ -128,11 +128,12 @@ function setupEventListeners() {
     window.addEventListener('click', function(event) {
         const modals = document.querySelectorAll('.modal');
         modals.forEach(modal => {
-            if (event.target === modal) {
+            if (event.target === modal && !modal.querySelector('.modal-content').contains(event.target)) {
                 modal.style.display = 'none';
             }
         });
     });
+
     
     // Filters
     document.getElementById('categoryFilter').addEventListener('change', filterProducts);
