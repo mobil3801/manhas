@@ -89,8 +89,33 @@ const sampleProducts = [
     }
 ];
 
-// Initialize App
+// Global Supabase client (will be initialized from supabase-config.js)
+let supabaseClient = null;
+
+// Initialize Supabase when DOM loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Supabase client
+    supabaseClient = window.initializeSupabase();
+    if (!supabaseClient) {
+        console.error('Failed to initialize Supabase client');
+        return;
+    }
+
+    // Set up auth state listener
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN') {
+            currentUser = session.user;
+            updateUIForAuthenticatedUser();
+        } else if (event === 'SIGNED_OUT') {
+            currentUser = null;
+            updateUIForUnauthenticatedUser();
+        }
+    });
+
+    // Check initial session
+    checkUserSession();
+    
+    // Continue with other initialization
     initializeApp();
     setupEventListeners();
     loadProducts();
@@ -342,13 +367,14 @@ function checkout() {
     showNotification('Order placed successfully!');
 }
 
-import { supabaseClient } from './supabase-config.js';
-
 // User Functions
 function openUserModal() {
     document.getElementById('userModal').style.display = 'block';
-
-    checkUserSession();
+    if (currentUser) {
+        showUserDashboard();
+    } else {
+        showLogin();
+    }
 }
 
 function closeUserModal() {
@@ -356,32 +382,47 @@ function closeUserModal() {
 }
 
 async function checkUserSession() {
+    if (!supabaseClient) return;
+    
     const { data: { session }, error } = await supabaseClient.auth.getSession();
     if (error) {
         console.error('Error getting session:', error.message);
         currentUser = null;
-        showLogin();
         return;
     }
+    
     if (session) {
         currentUser = session.user;
-        showUserDashboard();
+        updateUIForAuthenticatedUser();
     } else {
         currentUser = null;
-        showLogin();
+        updateUIForUnauthenticatedUser();
     }
+}
+
+function updateUIForAuthenticatedUser() {
+    // Update user button icon to show logged in state
+    const userBtn = document.getElementById('userBtn');
+    userBtn.innerHTML = '<i class="fas fa-user-check"></i>';
+    userBtn.title = `Logged in as ${currentUser.email}`;
+}
+
+function updateUIForUnauthenticatedUser() {
+    // Reset user button icon
+    const userBtn = document.getElementById('userBtn');
+    userBtn.innerHTML = '<i class="fas fa-user"></i>';
+    userBtn.title = 'User Account';
 }
 
 function showLogin() {
     document.getElementById('userModalTitle').textContent = 'Login';
     document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
     document.getElementById('userDashboard').style.display = 'none';
 }
 
 function showRegister() {
     document.getElementById('userModalTitle').textContent = 'Register';
-
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('registerForm').style.display = 'block';
     document.getElementById('userDashboard').style.display = 'none';
@@ -389,41 +430,73 @@ function showRegister() {
 
 async function handleLogin(event) {
     event.preventDefault();
+    if (!supabaseClient) {
+        showNotification('Authentication service not available', 'error');
+        return;
+    }
+
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
 
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password,
-    });
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password,
+        });
 
-    if (error) {
-        showNotification(error.message, 'error');
-    } else {
-        currentUser = data.user;
-        closeUserModal();
-        showNotification('Login successful!');
-        showUserDashboard();
+        if (error) {
+            showNotification(error.message, 'error');
+        } else {
+            currentUser = data.user;
+            closeUserModal();
+            showNotification('Login successful!');
+            // Clear form
+            document.getElementById('loginForm').reset();
+        }
+    } catch (error) {
+        showNotification('Login failed: ' + error.message, 'error');
     }
 }
 
 async function handleRegister(event) {
     event.preventDefault();
+    if (!supabaseClient) {
+        showNotification('Authentication service not available', 'error');
+        return;
+    }
+
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('registerConfirmPassword').value;
 
-    const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-    });
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+    }
 
-    if (error) {
-        showNotification(error.message, 'error');
-    } else {
-        currentUser = data.user;
-        closeUserModal();
-        showNotification('Registration successful! Please check your email to confirm your account.');
-        showUserDashboard();
+    if (password.length < 6) {
+        showNotification('Password must be at least 6 characters long', 'error');
+        return;
+    }
+
+    try {
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+        });
+
+        if (error) {
+            showNotification(error.message, 'error');
+        } else {
+            showNotification('Registration successful! Please check your email to confirm your account.');
+            // Clear form
+            document.getElementById('registerForm').reset();
+            // Switch to login form
+            showLogin();
+        }
+    } catch (error) {
+        showNotification('Registration failed: ' + error.message, 'error');
     }
 }
 
@@ -432,7 +505,9 @@ function showUserDashboard() {
         showLogin();
         return;
     }
-    document.getElementById('userModalTitle').textContent = `Welcome, ${currentUser.email}`;
+    
+    document.getElementById('userModalTitle').textContent = `Welcome!`;
+    document.getElementById('userName').textContent = currentUser.email;
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('registerForm').style.display = 'none';
     document.getElementById('userDashboard').style.display = 'block';
@@ -444,32 +519,75 @@ function showUserDashboard() {
     } else {
         adminBtn.style.display = 'none';
     }
-
-    // Display user orders
-    const ordersList = document.getElementById('userOrders');
-    const userOrders = orders.filter(order => order.userId === currentUser.id);
-    if (userOrders.length === 0) {
-        ordersList.innerHTML = '<p>You have no orders yet.</p>';
-    } else {
-        ordersList.innerHTML = userOrders.map(order => `
-            <div class="order-item">
-                <p>Order #${order.id} - ${new Date(order.date).toLocaleDateString()}</p>
-                <p>Status: ${order.status}</p>
-                <p>Total: $${order.total.toFixed(2)}</p>
-            </div>
-        `).join('');
-    }
 }
 
 async function logout() {
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
-        showNotification('Error logging out: ' + error.message, 'error');
-    } else {
-        currentUser = null;
-        showLogin();
-        showNotification('Logged out successfully!');
+    if (!supabaseClient) {
+        showNotification('Authentication service not available', 'error');
+        return;
     }
+
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+            showNotification('Error logging out: ' + error.message, 'error');
+        } else {
+            currentUser = null;
+            closeUserModal();
+            showNotification('Logged out successfully!');
+        }
+    } catch (error) {
+        showNotification('Logout failed: ' + error.message, 'error');
+    }
+}
+
+// Additional user functions
+function showOrders() {
+    if (!currentUser) return;
+    
+    // Filter orders for current user
+    const userOrders = orders.filter(order => order.userId === currentUser.id);
+    
+    let ordersHTML = '<h4>My Orders</h4>';
+    if (userOrders.length === 0) {
+        ordersHTML += '<p>You have no orders yet.</p>';
+    } else {
+        ordersHTML += userOrders.map(order => `
+            <div class="order-item">
+                <p><strong>Order #${order.id}</strong> - ${new Date(order.date).toLocaleDateString()}</p>
+                <p>Status: <span class="order-status ${order.status}">${order.status}</span></p>
+                <p>Total: $${order.total.toFixed(2)}</p>
+                <div class="order-items">
+                    ${order.items.map(item => `
+                        <div class="order-item-detail">
+                            ${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Update dashboard content
+    const dashboardOptions = document.querySelector('.dashboard-options');
+    dashboardOptions.innerHTML = ordersHTML + '<button onclick="showUserDashboard()">Back to Dashboard</button>';
+}
+
+function showProfile() {
+    if (!currentUser) return;
+    
+    let profileHTML = `
+        <h4>Profile Information</h4>
+        <div class="profile-info">
+            <p><strong>Email:</strong> ${currentUser.email}</p>
+            <p><strong>Account Created:</strong> ${new Date(currentUser.created_at).toLocaleDateString()}</p>
+            <p><strong>Email Confirmed:</strong> ${currentUser.email_confirmed_at ? 'Yes' : 'No'}</p>
+        </div>
+    `;
+    
+    // Update dashboard content
+    const dashboardOptions = document.querySelector('.dashboard-options');
+    dashboardOptions.innerHTML = profileHTML + '<button onclick="showUserDashboard()">Back to Dashboard</button>';
 }
 
 function saveToLocalStorage() {
@@ -624,4 +742,84 @@ function handleAddProduct(event) {
     displayProducts(products);
     closeAddProductModal();
     showNotification('Product added successfully!');
+}
+
+function scrollToShop() {
+    document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showAdminTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+    
+    // Load content based on tab
+    if (tabName === 'products') {
+        renderAdminProductsList();
+    } else if (tabName === 'orders') {
+        renderAdminOrdersList();
+    } else if (tabName === 'users') {
+        renderAdminUsersList();
+    }
+}
+
+function renderAdminOrdersList() {
+    const adminOrdersList = document.getElementById('adminOrdersList');
+    if (!adminOrdersList) return;
+
+    if (orders.length === 0) {
+        adminOrdersList.innerHTML = '<p>No orders available.</p>';
+        return;
+    }
+
+    adminOrdersList.innerHTML = orders.map(order => `
+        <div class="admin-order-item">
+            <h4>Order #${order.id}</h4>
+            <p>User ID: ${order.userId}</p>
+            <p>Date: ${new Date(order.date).toLocaleDateString()}</p>
+            <p>Status: ${order.status}</p>
+            <p>Total: $${order.total.toFixed(2)}</p>
+            <div class="order-items">
+                ${order.items.map(item => `
+                    <div class="order-item-detail">
+                        ${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAdminUsersList() {
+    const adminUsersList = document.getElementById('adminUsersList');
+    if (!adminUsersList) return;
+
+    if (users.length === 0) {
+        adminUsersList.innerHTML = '<p>No users available.</p>';
+        return;
+    }
+
+    adminUsersList.innerHTML = users.map(user => `
+        <div class="admin-user-item">
+            <h4>${user.name}</h4>
+            <p>Email: ${user.email}</p>
+            <p>Admin: ${user.isAdmin ? 'Yes' : 'No'}</p>
+        </div>
+    `).join('');
+}
+
+function showAddProduct() {
+    openAddProductModal();
 }

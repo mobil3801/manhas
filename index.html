@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="styles.css">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     </head>
 <body>
     <!-- Navigation -->
@@ -137,7 +138,13 @@
                 </form>
 
                 <!-- Register Form -->
-                <!-- Registration form removed as per login-only requirement -->
+                <form id="registerForm" class="user-form" style="display: none;">
+                    <input id="registerEmail" type="email" placeholder="Email" required>
+                    <input id="registerPassword" type="password" placeholder="Password" required>
+                    <input id="registerConfirmPassword" type="password" placeholder="Confirm Password" required>
+                    <button type="submit">Register</button>
+                    <p>Already have an account? <a href="#" onclick="showLogin()" title="Login">Login</a></p>
+                </form>
 
 
 
@@ -282,6 +289,10 @@
         </div>
     </footer>
 
+    <!-- Notification -->
+    <div id="notification" class="notification" style="display: none;"></div>
+
+    <script src="supabase-config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
