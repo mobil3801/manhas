@@ -347,3 +347,159 @@ function showLogin() {
 
 function showRegister() {
     document.getElementById('userModalTitle').textContent = 'Register';
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('userDashboard').style.display = 'none';
+}
+
+function handleLogin(event) {
+    event.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    // Simple authentication logic (replace with Supabase auth later)
+    const user = users.find(u => u.email === email && u.password === password);
+    if (user) {
+        currentUser = user;
+        closeUserModal();
+        showNotification('Login successful!');
+        showUserDashboard();
+    } else {
+        showNotification('Invalid email or password', 'error');
+    }
+}
+
+function handleRegister(event) {
+    event.preventDefault();
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+
+    if (users.find(u => u.email === email)) {
+        showNotification('Email already registered', 'error');
+        return;
+    }
+
+    const newUser = {
+        id: users.length + 1,
+        name,
+        email,
+        password,
+        isAdmin: false
+    };
+
+    users.push(newUser);
+    currentUser = newUser;
+    closeUserModal();
+    showNotification('Registration successful!');
+    showUserDashboard();
+}
+
+function showUserDashboard() {
+    document.getElementById('userModalTitle').textContent = `Welcome, ${currentUser.name}`;
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('userDashboard').style.display = 'block';
+
+    // Display user orders
+    const ordersList = document.getElementById('userOrders');
+    const userOrders = orders.filter(order => order.userId === currentUser.id);
+    if (userOrders.length === 0) {
+        ordersList.innerHTML = '<p>You have no orders yet.</p>';
+    } else {
+        ordersList.innerHTML = userOrders.map(order => `
+            <div class="order-item">
+                <p>Order #${order.id} - ${new Date(order.date).toLocaleDateString()}</p>
+                <p>Status: ${order.status}</p>
+                <p>Total: $${order.total.toFixed(2)}</p>
+            </div>
+        `).join('');
+    }
+}
+
+function logout() {
+    currentUser = null;
+    showLogin();
+    showNotification('Logged out successfully!');
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('orders', JSON.stringify(orders));
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+}
+
+function loadFromLocalStorage() {
+    const storedCart = localStorage.getItem('cart');
+    const storedUsers = localStorage.getItem('users');
+    const storedOrders = localStorage.getItem('orders');
+    const storedCurrentUser = localStorage.getItem('currentUser');
+
+    if (storedCart) cart = JSON.parse(storedCart);
+    if (storedUsers) users = JSON.parse(storedUsers);
+    if (storedOrders) orders = JSON.parse(storedOrders);
+    if (storedCurrentUser) currentUser = JSON.parse(storedCurrentUser);
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
+function toggleMobileMenu() {
+    const nav = document.getElementById('navMenu');
+    if (nav.style.display === 'block') {
+        nav.style.display = 'none';
+    } else {
+        nav.style.display = 'block';
+    }
+}
+
+function openAdminModal() {
+    document.getElementById('adminModal').style.display = 'block';
+}
+
+function closeAdminModal() {
+    document.getElementById('adminModal').style.display = 'none';
+}
+
+function openAddProductModal() {
+    document.getElementById('addProductModal').style.display = 'block';
+}
+
+function closeAddProductModal() {
+    document.getElementById('addProductModal').style.display = 'none';
+}
+
+function handleAddProduct(event) {
+    event.preventDefault();
+    const name = document.getElementById('productName').value;
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const category = document.getElementById('productCategory').value;
+    const image = document.getElementById('productImage').value;
+    const description = document.getElementById('productDescription').value;
+    const sizes = document.getElementById('productSizes').value.split(',').map(s => s.trim());
+    const inStock = document.getElementById('productInStock').checked;
+
+    const newProduct = {
+        id: products.length + 1,
+        name,
+        price,
+        category,
+        image,
+        description,
+        sizes,
+        inStock
+    };
+
+    products.push(newProduct);
+    displayProducts(products);
+    closeAddProductModal();
+    showNotification('Product added successfully!');
+}

@@ -125,21 +125,22 @@
             <div class="user-forms">
                 <!-- Login Form -->
                 <form id="loginForm" class="user-form">
-                    <input type="email" placeholder="Email" required>
-                    <input type="password" placeholder="Password" required>
+                    <input id="loginEmail" type="email" placeholder="Email" required>
+                    <input id="loginPassword" type="password" placeholder="Password" required>
                     <button type="submit">Login</button>
                     <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
                 </form>
 
                 <!-- Register Form -->
                 <form id="registerForm" class="user-form" style="display: none;">
-                    <input type="text" placeholder="Full Name" required>
-                    <input type="email" placeholder="Email" required>
-                    <input type="password" placeholder="Password" required>
-                    <input type="password" placeholder="Confirm Password" required>
+                    <input id="registerName" type="text" placeholder="Full Name" required>
+                    <input id="registerEmail" type="email" placeholder="Email" required>
+                    <input id="registerPassword" type="password" placeholder="Password" required>
+                    <input id="registerConfirmPassword" type="password" placeholder="Confirm Password" required>
                     <button type="submit">Register</button>
                     <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
                 </form>
+
 
                 <!-- User Dashboard -->
                 <div id="userDashboard" style="display: none;">
