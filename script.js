@@ -140,13 +140,28 @@ function setupEventListeners() {
     document.getElementById('sizeFilter').addEventListener('change', filterProducts);
 
     // Forms
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    document.getElementById('registerForm').addEventListener('submit', handleRegister);
-    document.getElementById('addProductForm').addEventListener('submit', handleAddProduct);
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+    const addProductForm = document.getElementById('addProductForm');
+    if (addProductForm) {
+        addProductForm.addEventListener('submit', handleAddProduct);
+    }
 
     // Admin panel buttons and actions
-    document.getElementById('adminBtn').addEventListener('click', openAdminModal);
-    document.getElementById('adminProductsList').addEventListener('click', handleAdminProductsListClick);
+    const adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) {
+        adminBtn.addEventListener('click', openAdminModal);
+    }
+    const adminProductsList = document.getElementById('adminProductsList');
+    if (adminProductsList) {
+        adminProductsList.addEventListener('click', handleAdminProductsListClick);
+    }
 }
 
 // Product Functions
