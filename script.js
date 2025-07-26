@@ -15,7 +15,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400",
         description: "Beautiful flowy summer dress perfect for any occasion",
         sizes: ["XS", "S", "M", "L", "XL"],
-        inStock: true
+        stockQuantity: 10
     },
     {
         id: 2,
@@ -25,7 +25,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400",
         description: "Classic denim jacket that goes with everything",
         sizes: ["S", "M", "L", "XL"],
-        inStock: true
+        stockQuantity: 15
     },
     {
         id: 3,
@@ -35,7 +35,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1564257577-0f3b8b6d5d4f?w=400",
         description: "Luxurious silk blouse for professional wear",
         sizes: ["XS", "S", "M", "L"],
-        inStock: true
+        stockQuantity: 8
     },
     {
         id: 4,
@@ -45,7 +45,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400",
         description: "Comfortable high-waisted jeans with perfect fit",
         sizes: ["XS", "S", "M", "L", "XL"],
-        inStock: true
+        stockQuantity: 12
     },
     {
         id: 5,
@@ -55,7 +55,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
         description: "Elegant leather handbag for everyday use",
         sizes: ["One Size"],
-        inStock: true
+        stockQuantity: 5
     },
     {
         id: 6,
@@ -65,7 +65,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400",
         description: "Beautiful floral maxi dress for special occasions",
         sizes: ["S", "M", "L", "XL"],
-        inStock: true
+        stockQuantity: 7
     },
     {
         id: 7,
@@ -75,7 +75,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400",
         description: "Soft and cozy cardigan perfect for layering",
         sizes: ["XS", "S", "M", "L", "XL"],
-        inStock: true
+        stockQuantity: 20
     },
     {
         id: 8,
@@ -85,7 +85,7 @@ const sampleProducts = [
         image: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400",
         description: "Stylish leather boots for any season",
         sizes: ["6", "7", "8", "9", "10"],
-        inStock: true
+        stockQuantity: 10
     }
 ];
 
@@ -117,13 +117,13 @@ function setupEventListeners() {
     document.getElementById('cartBtn').addEventListener('click', openCart);
     document.getElementById('userBtn').addEventListener('click', openUserModal);
     document.getElementById('hamburger').addEventListener('click', toggleMobileMenu);
-    
+
     // Modal close buttons
     document.getElementById('closeCart').addEventListener('click', closeCart);
     document.getElementById('closeUser').addEventListener('click', closeUserModal);
     document.getElementById('closeAdmin').addEventListener('click', closeAdminModal);
     document.getElementById('closeAddProduct').addEventListener('click', closeAddProductModal);
-    
+
     // Close modals when clicking outside
     window.addEventListener('click', function(event) {
         const modals = document.querySelectorAll('.modal');
@@ -134,16 +134,19 @@ function setupEventListeners() {
         });
     });
 
-    
     // Filters
     document.getElementById('categoryFilter').addEventListener('change', filterProducts);
     document.getElementById('priceFilter').addEventListener('change', filterProducts);
     document.getElementById('sizeFilter').addEventListener('change', filterProducts);
-    
+
     // Forms
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('registerForm').addEventListener('submit', handleRegister);
     document.getElementById('addProductForm').addEventListener('submit', handleAddProduct);
+
+    // Admin panel buttons and actions
+    document.getElementById('adminBtn').addEventListener('click', openAdminModal);
+    document.getElementById('adminProductsList').addEventListener('click', handleAdminProductsListClick);
 }
 
 // Product Functions
@@ -324,83 +327,108 @@ function checkout() {
     showNotification('Order placed successfully!');
 }
 
+import { supabaseClient } from './supabase-config.js';
+
 // User Functions
 function openUserModal() {
     document.getElementById('userModal').style.display = 'block';
-    
-    if (currentUser) {
-        showUserDashboard();
-    } else {
-        showLogin();
-    }
+
+    checkUserSession();
 }
 
 function closeUserModal() {
     document.getElementById('userModal').style.display = 'none';
 }
 
+async function checkUserSession() {
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    if (error) {
+        console.error('Error getting session:', error.message);
+        currentUser = null;
+        showLogin();
+        return;
+    }
+    if (session) {
+        currentUser = session.user;
+        showUserDashboard();
+    } else {
+        currentUser = null;
+        showLogin();
+    }
+}
+
 function showLogin() {
     document.getElementById('userModalTitle').textContent = 'Login';
     document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
     document.getElementById('userDashboard').style.display = 'none';
 }
 
 function showRegister() {
     document.getElementById('userModalTitle').textContent = 'Register';
+
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('registerForm').style.display = 'block';
     document.getElementById('userDashboard').style.display = 'none';
 }
 
-function handleLogin(event) {
+async function handleLogin(event) {
     event.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
 
-    // Simple authentication logic (replace with Supabase auth later)
-    const user = users.find(u => u.email === email && u.password === password);
-    if (user) {
-        currentUser = user;
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+    });
+
+    if (error) {
+        showNotification(error.message, 'error');
+    } else {
+        currentUser = data.user;
         closeUserModal();
         showNotification('Login successful!');
         showUserDashboard();
-    } else {
-        showNotification('Invalid email or password', 'error');
     }
 }
 
-function handleRegister(event) {
+async function handleRegister(event) {
     event.preventDefault();
-    const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
 
-    if (users.find(u => u.email === email)) {
-        showNotification('Email already registered', 'error');
-        return;
-    }
-
-    const newUser = {
-        id: users.length + 1,
-        name,
+    const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
-        isAdmin: false
-    };
+    });
 
-    users.push(newUser);
-    currentUser = newUser;
-    closeUserModal();
-    showNotification('Registration successful!');
-    showUserDashboard();
+    if (error) {
+        showNotification(error.message, 'error');
+    } else {
+        currentUser = data.user;
+        closeUserModal();
+        showNotification('Registration successful! Please check your email to confirm your account.');
+        showUserDashboard();
+    }
 }
 
 function showUserDashboard() {
-    document.getElementById('userModalTitle').textContent = `Welcome, ${currentUser.name}`;
+    if (!currentUser) {
+        showLogin();
+        return;
+    }
+    document.getElementById('userModalTitle').textContent = `Welcome, ${currentUser.email}`;
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('registerForm').style.display = 'none';
     document.getElementById('userDashboard').style.display = 'block';
+
+    // Show admin button only for admin users
+    const adminBtn = document.getElementById('adminBtn');
+    if (currentUser && currentUser.email === 'admin@luxefashion.com') {
+        adminBtn.style.display = 'inline-block';
+    } else {
+        adminBtn.style.display = 'none';
+    }
 
     // Display user orders
     const ordersList = document.getElementById('userOrders');
@@ -418,10 +446,15 @@ function showUserDashboard() {
     }
 }
 
-function logout() {
-    currentUser = null;
-    showLogin();
-    showNotification('Logged out successfully!');
+async function logout() {
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+        showNotification('Error logging out: ' + error.message, 'error');
+    } else {
+        currentUser = null;
+        showLogin();
+        showNotification('Logged out successfully!');
+    }
 }
 
 function saveToLocalStorage() {
@@ -464,6 +497,79 @@ function toggleMobileMenu() {
 
 function openAdminModal() {
     document.getElementById('adminModal').style.display = 'block';
+    renderAdminProductsList();
+}
+
+function renderAdminProductsList() {
+    const adminProductsList = document.getElementById('adminProductsList');
+    if (!adminProductsList) return;
+
+    if (products.length === 0) {
+        adminProductsList.innerHTML = '<p>No products available.</p>';
+        return;
+    }
+
+    adminProductsList.innerHTML = products.map(product => `
+        <div class="admin-product-item" data-id="${product.id}">
+            <input type="text" class="admin-product-name" value="${product.name}" />
+            <input type="number" class="admin-product-price" value="${product.price.toFixed(2)}" step="0.01" />
+            <select class="admin-product-category">
+                <option value="dresses" ${product.category === 'dresses' ? 'selected' : ''}>Dresses</option>
+                <option value="tops" ${product.category === 'tops' ? 'selected' : ''}>Tops</option>
+                <option value="bottoms" ${product.category === 'bottoms' ? 'selected' : ''}>Bottoms</option>
+                <option value="outerwear" ${product.category === 'outerwear' ? 'selected' : ''}>Outerwear</option>
+                <option value="accessories" ${product.category === 'accessories' ? 'selected' : ''}>Accessories</option>
+            </select>
+            <input type="number" class="admin-product-stock" value="${product.stockQuantity}" min="0" />
+            <button class="admin-save-btn">Save</button>
+            <button class="admin-delete-btn">Delete</button>
+        </div>
+    `).join('');
+}
+
+function handleAdminProductsListClick(event) {
+    const target = event.target;
+    const productItem = target.closest('.admin-product-item');
+    if (!productItem) return;
+
+    const productId = parseInt(productItem.getAttribute('data-id'), 10);
+    const productIndex = products.findIndex(p => p.id === productId);
+    if (productIndex === -1) return;
+
+    if (target.classList.contains('admin-save-btn')) {
+        // Save changes
+        const nameInput = productItem.querySelector('.admin-product-name');
+        const priceInput = productItem.querySelector('.admin-product-price');
+        const categorySelect = productItem.querySelector('.admin-product-category');
+        const stockInput = productItem.querySelector('.admin-product-stock');
+
+        const updatedName = nameInput.value.trim();
+        const updatedPrice = parseFloat(priceInput.value);
+        const updatedCategory = categorySelect.value;
+        const updatedStock = parseInt(stockInput.value, 10);
+
+        if (!updatedName || isNaN(updatedPrice) || !updatedCategory || isNaN(updatedStock) || updatedStock < 0) {
+            showNotification('Please enter valid product details.', 'error');
+            return;
+        }
+
+        products[productIndex].name = updatedName;
+        products[productIndex].price = updatedPrice;
+        products[productIndex].category = updatedCategory;
+        products[productIndex].stockQuantity = updatedStock;
+
+        showNotification('Product updated successfully.');
+        renderAdminProductsList();
+        displayProducts(products);
+    } else if (target.classList.contains('admin-delete-btn')) {
+        // Delete product
+        if (confirm('Are you sure you want to delete this product?')) {
+            products.splice(productIndex, 1);
+            showNotification('Product deleted successfully.');
+            renderAdminProductsList();
+            displayProducts(products);
+        }
+    }
 }
 
 function closeAdminModal() {
